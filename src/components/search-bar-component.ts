@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, AfterViewInit, OnChanges } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { of } from 'rxjs/observable/of';
 import { AlertController, Alert } from 'ionic-angular';
@@ -22,15 +22,15 @@ export class FilterModel {
 }
 
 const HTML_TEMPLATE = `
-<ion-navbar>
-  <ion-buttons left *ngIf="filterOptions.length > 1">
-      <button (tap)="showAlert()" ion-button icon-only>
-          <ion-icon name="funnel">
-          </ion-icon>
-      </button>
-  </ion-buttons>
-  <ion-searchbar [placeholder]="placeholder + selectedFilter.label" showCancelButton="true" (ionInput)="onInput($event.target.value)"></ion-searchbar>
-</ion-navbar>
+  <ion-navbar *ngIf="filterOptions">
+    <ion-buttons left *ngIf="filterOptions.length > 1">
+        <button (tap)="showAlert()" ion-button icon-only>
+            <ion-icon name="funnel">
+            </ion-icon>
+        </button>
+    </ion-buttons>
+    <ion-searchbar [placeholder]="placeholder + selectedFilter.label" showCancelButton="true" (ionInput)="onInput($event.target.value)"></ion-searchbar>
+  </ion-navbar>
 `;
 
 const CSS_STYLE = '';
@@ -41,7 +41,7 @@ const CSS_STYLE = '';
   styles: [CSS_STYLE]
 })
 
-export class SearchBarComponent {
+export class SearchBarComponent implements OnChanges, AfterViewInit {
 
   // Example usage:
   // <search-bar 
@@ -112,13 +112,26 @@ export class SearchBarComponent {
    * Setting default options on view initialization
    */
   ngAfterViewInit() {
+    if (!this.filterOptions) {
+      return console.warn("Search-Bar: Couldn't initialize search-bar component please send at least one filter option to filterOptions array!");
+    }
+    
+    this._selectedFilter = this.filterOptions[0];
+
     if (this.returnAsObservable) {
       this.filteredEmitter.emit(of(this.filterArray));
     } else {
       this.filteredEmitter.emit(this.filterArray);
     }
-    this._selectedFilter = this.filterOptions[0];
     this.placeholder ? this.placeholder : 'Search by: ';
+  }
+
+  ngOnChanges() {
+    if (this.returnAsObservable) {
+      this.filteredEmitter.emit(of(this.filterArray));
+    } else {
+      this.filteredEmitter.emit(this.filterArray);
+    }
   }
 
   /**
@@ -162,7 +175,7 @@ export class SearchBarComponent {
     let backupList = this.filterArray;
     if (value && value.trim() != "") {
       backupList = backupList.filter(prop => {
-        return (prop[this._selectedFilter.value].toLocaleLowerCase().indexOf(value.toLocaleLowerCase()) > -1);
+        return (prop[this._selectedFilter.value].toString().toLocaleLowerCase().indexOf(value.toLocaleLowerCase()) > -1);
       })
     }
     if (this.returnAsObservable) {
