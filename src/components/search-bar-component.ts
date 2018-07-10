@@ -63,7 +63,7 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
    * MUST HAVE AT LEAST ONE!
    * ex:
    * the label is what will be shown on the list
-   * the value is the object itself
+   * the value is the object itself, example: "propertyObject.subpropertyObjectString" or "propertyString"
    * {
    *    label: string;
    *    value: string;
@@ -175,7 +175,18 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
     let backupList = this.filterArray;
     if (value && value.trim() != "") {
       backupList = backupList.filter(prop => {
-        return (prop[this._selectedFilter.value].toString().toLocaleLowerCase().indexOf(value.toLocaleLowerCase()) > -1);
+        
+        // filter in tree
+        let propFilter = this._selectedFilter.value.split('.');
+        let currentData = prop;
+        for(let p of propFilter) {
+          if(!currentData[p]) 
+            throw new Error(`Property ${p} not exists in structure.`);
+          else
+            currentData = currentData[p];
+        }
+        
+        return (currentData.toString().toLocaleLowerCase().indexOf(value.toLocaleLowerCase()) > -1);
       })
     }
     if (this.returnAsObservable) {
