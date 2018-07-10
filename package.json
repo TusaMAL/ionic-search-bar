@@ -1,6 +1,6 @@
 {
   "name": "ionic-search-bar",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A search bar component",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
