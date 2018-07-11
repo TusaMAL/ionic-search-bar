@@ -43,27 +43,30 @@ const CSS_STYLE = '';
 
 export class SearchBarComponent implements OnChanges, AfterViewInit {
 
-  // Example usage:
   // <search-bar 
-  // [placeholder]="'Buscando por: '" 
-  // [filterArray]="arr" 
-  // (filteredEmitter)="filtered($event)"
-  // (selectedEmitter)="selected($event)"
-  // [returnAsObservable]="true"
+  // placeholder="Buscando por: "
   // [filterOptions]="filterOptions"
-  // [alertText]="['Selecione o filtro', '', 'Cancelar', 'Selecionar']"
-  // ></search-bar>
+  // [filterArray]="arr" 
+  // (onFilter)="filtered($event)"
+  // (onSelect)="selected($event)"
+  // [returnAsObservable]="true"
+  // alertTitle="Selecione o filtro"
+  // alertOkBtn="Selecionar"
+  // alertSubTitle="OMG"
+  // alertCancelBtn="Cancelar"
+  // >
+  // </search-bar>
   /**
    * Text to be shown on the searchbar
    */
   @Input() placeholder: string;
   /**
    * Options to receive as filter must be an array with objects
-   * each of the objects are one of the filter
+   * each of the objects are one of the filters
    * MUST HAVE AT LEAST ONE!
    * ex:
    * the label is what will be shown on the list
-   * the value is the object itself, example: "propertyObject.subpropertyObjectString" or "propertyString"
+   * the value is the property to filter example: "propertyObject.subpropertyObjectString" or "propertyString"
    * {
    *    label: string;
    *    value: string;
@@ -81,18 +84,33 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
    */
   @Input() returnAsObservable: boolean;
   /**
-   * Array with the text to display on the alert
-   * Ex: ['Title', 'Subtitle', 'Cancel Button', 'Select Button']
+   * Alert Title
+   * default value: "Select Filter"
    */
-  @Input() alertText: Array<any>;
+  @Input() alertTitle: string;
+  /**
+   * Alert sub title if doesn't receive a value it will be null
+   */
+  @Input() alertSubTitle: string;
+  /**
+   * Alert cancel button
+   * default value: "Cancel"
+   */
+  @Input() alertCancelBtn: string;
+  /**
+   * Alert ok button
+   * default value: "OK"
+   */
+  @Input() alertOkBtn: string;
+
   /**
    * Send for the parent the filtered Array or Observable
    */
-  @Output() filteredEmitter = new EventEmitter<Array<any> | Observable<Array<any>>>();
+  @Output() onFilter = new EventEmitter<Array<any> | Observable<Array<any>>>();
   /**
    * Send for the parent the selected filter
    */
-  @Output() selectedEmitter = new EventEmitter<FilterModel>();
+  @Output() onSelect= new EventEmitter<FilterModel>();
   private _selectedFilter: FilterModel;
   get selectedFilter() {
     return this._selectedFilter;
@@ -103,9 +121,13 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
     private alertCtrl: AlertController
   ) {
     this.filterArray = [];
-    this.alertText = [];
+    this.alertCancelBtn = 'Cancel';
+    this.alertOkBtn = 'OK';
+    this.alertSubTitle = '';
+    this.alertTitle = 'Select filter';
     this.placeholder = 'Search by: ';
     this._selectedFilter = new FilterModel();
+
   }
 
   /**
@@ -113,24 +135,23 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
    */
   ngAfterViewInit() {
     if (!this.filterOptions) {
-      return console.warn("Search-Bar: Couldn't initialize search-bar component please send at least one filter option to filterOptions array!");
+      return console.error("Search-Bar: Couldn't initialize search-bar component please send at least one filter option to filterOptions array!");
     }
     
     this._selectedFilter = this.filterOptions[0];
 
     if (this.returnAsObservable) {
-      this.filteredEmitter.emit(of(this.filterArray));
+      this.onFilter.emit(of(this.filterArray));
     } else {
-      this.filteredEmitter.emit(this.filterArray);
+      this.onFilter.emit(this.filterArray);
     }
-    this.placeholder ? this.placeholder : 'Search by: ';
   }
 
   ngOnChanges() {
     if (this.returnAsObservable) {
-      this.filteredEmitter.emit(of(this.filterArray));
+      this.onFilter.emit(of(this.filterArray));
     } else {
-      this.filteredEmitter.emit(this.filterArray);
+      this.onFilter.emit(this.filterArray);
     }
   }
 
@@ -139,23 +160,24 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
    */
   showAlert() {
     this._alert = this.alertCtrl.create({
-      title: this.alertText[0] ? this.alertText[0] : 'Select filter',
-      subTitle: this.alertText[1] ? this.alertText[1] : '',
+      title: this.alertTitle,
+      subTitle: this.alertSubTitle,
       buttons: [
         {
-          text: this.alertText[2] ? this.alertText[2] : 'Cancel',
+          text: this.alertCancelBtn
         },
         {
-          text: this.alertText[3] ? this.alertText[3] : 'OK',
+          text: this.alertOkBtn,
           handler: (data: FilterModel) => {
             if (data) {
               this._selectedFilter = data;
-              this.selectedEmitter.emit(this._selectedFilter);
+              this.onSelect.emit(this._selectedFilter);
             }
           }
         }
       ]
     });
+    // adding the inputs to the alert
     this.filterOptions.forEach(option => {
       this._alert.addInput({
         type: 'radio',
@@ -181,7 +203,7 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
         let currentData = prop;
         for(let p of propFilter) {
           if(!currentData[p]) 
-            throw new Error(`Property ${p} not exists in structure.`);
+            throw new Error(`Property ${p} doesn't exists.`);
           else
             currentData = currentData[p];
         }
@@ -190,9 +212,9 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
       })
     }
     if (this.returnAsObservable) {
-      this.filteredEmitter.emit(of(backupList));
+      this.onFilter.emit(of(backupList));
     } else {
-      this.filteredEmitter.emit(backupList);
+      this.onFilter.emit(backupList);
     }
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "ionic-search-bar",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A search bar component",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -17,7 +17,7 @@
     "url": "git+https://github.com/TusaMAL/ionic-search-bar.git"
   },
   "keywords": [],
-  "author": "Felipe Carlos Dos Santos",
+  "author": "Felipe Carlos Dos Santos, Hiago Silva Souza",
   "license": "MIT",
   "devDependencies": {
     "@angular/common": "5.2.11",
