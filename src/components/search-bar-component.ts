@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, AfterViewInit, OnChanges } from
 import { Observable } from 'rxjs/Observable';
 import { of } from 'rxjs/observable/of';
 import { AlertController, Alert } from 'ionic-angular';
+import { AlertInputOptions } from 'ionic-angular/umd/components/alert/alert-options';
 
 /**
  * Generated class for the SearchBarComponent component.
@@ -19,6 +20,18 @@ export class FilterModel {
    * Value of the property on the array that will be used to filter
    */
   value: string;
+
+  /**
+   * Type of filter
+   */
+  type?: EFilterType = EFilterType.TEXT;
+}
+
+export enum EFilterType {
+  TEXT = 'text',
+  EMAIL = 'email',
+  NUMBER = 'number',
+  DATE = 'date'
 }
 
 const HTML_TEMPLATE = `
@@ -29,7 +42,7 @@ const HTML_TEMPLATE = `
             </ion-icon>
         </button>
     </ion-buttons>
-    <ion-searchbar [placeholder]="placeholder + selectedFilter.label" showCancelButton="true" (ionInput)="onInput($event.target.value)"></ion-searchbar>
+    <ion-searchbar [type]="selectedFilter.type" [placeholder]="placeholder + selectedFilter.label" showCancelButton="true" (ionInput)="onInput($event.target.value)"></ion-searchbar>
   </ion-navbar>
 `;
 
@@ -115,7 +128,6 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
   get selectedFilter() {
     return this._selectedFilter;
   }
-  private _alert: Alert;
 
   constructor(
     private alertCtrl: AlertController
@@ -159,34 +171,38 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
    * Creating filtering alert
    */
   showAlert() {
-    this._alert = this.alertCtrl.create({
+
+    // adding the inputs to the alert
+    let inputsOptions: Array<AlertInputOptions> = new Array<AlertInputOptions>();
+    for (let option of this.filterOptions) {
+      inputsOptions.push({
+        type: 'radio',
+        value: option,
+        label: option.label,
+        checked: this._selectedFilter.value == option.value ? true : false
+      });
+    }
+
+    // create and present alertCtrl
+    this.alertCtrl.create({
       title: this.alertTitle,
       subTitle: this.alertSubTitle,
+      inputs: inputsOptions,
       buttons: [
-        {
-          text: this.alertCancelBtn
-        },
+        this.alertCancelBtn,
         {
           text: this.alertOkBtn,
           handler: (data: FilterModel) => {
             if (data) {
+              if(!data.type)
+                data.type = EFilterType.TEXT;
               this._selectedFilter = data;
               this.onSelect.emit(this._selectedFilter);
             }
           }
         }
       ]
-    });
-    // adding the inputs to the alert
-    this.filterOptions.forEach(option => {
-      this._alert.addInput({
-        type: 'radio',
-        value: option,
-        label: option.label,
-        checked: this._selectedFilter.value == option.value ? true : false
-      });
-    });
-    this._alert.present();
+    }).present();
   }
 
   /**
@@ -206,6 +222,15 @@ export class SearchBarComponent implements OnChanges, AfterViewInit {
             throw new Error(`Property ${p} doesn't exists.`);
           else
             currentData = currentData[p];
+        }
+
+        // filter date
+        if(this._selectedFilter.type == EFilterType.DATE) {
+          let gmt = new Date().toString().split('GMT')[1];
+          let day1: Date = new Date(currentData);
+          let day2: Date = new Date(`${value} GMT${gmt}`);
+          currentData = `${day1.getFullYear()}-${day1.getMonth()}-${day1.getDate()}`;
+          value = `${day2.getFullYear()}-${day2.getMonth()}-${day2.getDate()}`;
         }
         
         return (currentData.toString().toLocaleLowerCase().indexOf(value.toLocaleLowerCase()) > -1);
